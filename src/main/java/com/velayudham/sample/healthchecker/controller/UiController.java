@@ -21,13 +21,17 @@ import java.util.Map;
 @Controller
 public class UiController {
 
-    @Autowired
-    private RequestMappingHandlerMapping requestMappingHandlerMapping;
+    private final RequestMappingHandlerMapping handlerMapping;
 
-    @GetMapping("endpoints_status")
-    public String getEndpointsStatus(Model model) throws IOException {
+    @Autowired
+    public UiController(@Qualifier("requestMappingHandlerMapping") RequestMappingHandlerMapping handlerMapping) {
+        this.handlerMapping = handlerMapping;
+    }
+
+    @GetMapping("points")
+    public String getEndpoints(Model model) throws IOException {
         Map<String,String> endpoints = new HashMap<>();
-        Map<RequestMappingInfo, HandlerMethod> handlerMethods = requestMappingHandlerMapping.getHandlerMethods();
+        Map<RequestMappingInfo, HandlerMethod> handlerMethods = handlerMapping.getHandlerMethods();
         for(Map.Entry<RequestMappingInfo,HandlerMethod> ent:handlerMethods.entrySet()){
             String s = ent.getKey().getPatternValues().toString();
             String a = ent.getKey().getMethodsCondition().toString();
@@ -48,15 +52,7 @@ public class UiController {
     }
     public int req(String url,String meth) throws IOException {
         OkHttpClient client = new OkHttpClient();
-        Request request;
-        switch(meth) {
-            case "POST":
-            case "PUT":
-                RequestBody requestBody = RequestBody.create(null, new byte[0]);
-                request = new Request.Builder().url(url).method(meth, requestBody).build();
-            default:
-                request = new Request.Builder().url(url).build();
-        }
+        Request request = new Request.Builder().url(url).build();
 
         try (Response response = client.newCall(request).execute()) {
             return response.code();
